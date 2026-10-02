@@ -137,9 +137,19 @@ void LED_Pattern_1(uint8_t button_status)
         // Button 1 and Button 2 are pressed
         case 0x00:
         {
-            LED1_Output(RED_LED_ON);
-            LED2_Output(RGB_LED_GREEN);
-            PMOD_8LD_Output(PMOD_8LD_ALL_ON);
+            // If the green LED is on, turn both off. Otherwise turn both on
+            if (LED2_Status() == RGB_LED_GREEN)
+            {
+                LED1_Output(RED_LED_OFF);
+                LED2_Output(RGB_LED_OFF);
+            }
+            else
+            {
+                LED1_Output(RED_LED_ON);
+                LED2_Output(RGB_LED_GREEN);
+            }
+            PMOD_8LD_Output(PMOD_8LD_ALL_OFF);
+            Clock_Delay1ms(1000);
             break;
         }
 
@@ -149,7 +159,7 @@ void LED_Pattern_1(uint8_t button_status)
         {
             LED1_Output(RED_LED_ON);
             LED2_Output(RGB_LED_OFF);
-            PMOD_8LD_Output(PMOD_8LD_0_3_ON);
+            PMOD_8LD_Output(0x55);      // LEDs 0, 2, 4, 6 on
             break;
         }
 
@@ -158,8 +168,8 @@ void LED_Pattern_1(uint8_t button_status)
         case 0x02:
         {
             LED1_Output(RED_LED_OFF);
-            LED2_Output(RGB_LED_GREEN);
-            PMOD_8LD_Output(PMOD_8LD_4_7_ON);
+            LED2_Output(RGB_LED_BLUE);
+            PMOD_8LD_Output(0xAA);      // LEDs 1, 3, 5, 7 on
             break;
         }
 
@@ -168,7 +178,7 @@ void LED_Pattern_1(uint8_t button_status)
         {
             LED1_Output(RED_LED_OFF);
             LED2_Output(RGB_LED_OFF);
-            PMOD_8LD_Output(PMOD_8LD_ALL_OFF);
+            PMOD_8LD_Output(PMOD_8LD_ALL_ON);
             break;
         }
     }
@@ -191,6 +201,85 @@ void LED_Pattern_2(void)
     }
 }
 
+void LED_Pattern_3(void)
+{
+    LED1_Output(RED_LED_ON);
+    LED2_Output(RGB_LED_BLUE);
+
+    // Count down from 255 to 0
+    for (int led_count = 0xFF; led_count >= 0; led_count--)
+    {
+        PMOD_8LD_Output(led_count);
+        Clock_Delay1ms(100);
+        uint8_t switch_status = Get_PMOD_SWT_Status();
+        if (switch_status != 0x02)
+        {
+            break;
+        }
+    }
+}
+
+void LED_Pattern_4(void)
+{
+    LED1_Output(RED_LED_OFF);
+    LED2_Output(RGB_LED_OFF);
+
+    // Move the 1 to the left, starting at the LSB
+    for (int bit_position = 0; bit_position < 8; bit_position++)
+    {
+        PMOD_8LD_Output(0x01 << bit_position);
+        Clock_Delay1ms(200);
+        uint8_t switch_status = Get_PMOD_SWT_Status();
+        if (switch_status != 0x04)
+        {
+            break;
+        }
+    }
+}
+
+void LED_Pattern_5(void)
+{
+    LED1_Output(RED_LED_OFF);
+    LED2_Output(RGB_LED_OFF);
+
+    // Move the 1 to the right, starting at the MSB
+    for (int bit_position = 0; bit_position < 8; bit_position++)
+    {
+        PMOD_8LD_Output(0x80 >> bit_position);
+        Clock_Delay1ms(200);
+        uint8_t switch_status = Get_PMOD_SWT_Status();
+        if (switch_status != 0x08)
+        {
+            break;
+        }
+    }
+}
+
+void Johnson_Counter(void)
+{
+    LED1_Output(RED_LED_ON);
+    LED2_Output(RGB_LED_GREEN);
+
+    // Start at all zeroes
+    uint8_t pattern = 0x00;
+
+    // 16 steps in one full cycle
+    for (int count = 0; count < 16; count++)
+    {
+        PMOD_8LD_Output(pattern);
+        Clock_Delay1ms(200);
+        uint8_t switch_status = Get_PMOD_SWT_Status();
+        if (switch_status != 0x03)
+        {
+            break;
+        }
+
+        // Shift left and put the inverted old MSB into bit 0
+        uint8_t old_msb = (pattern >> 7) & 0x01;
+        pattern = (pattern << 1) | (~old_msb & 0x01);
+    }
+}
+
 void LED_Controller(uint8_t button_status, uint8_t switch_status)
 {
     switch(switch_status)
@@ -204,6 +293,30 @@ void LED_Controller(uint8_t button_status, uint8_t switch_status)
         case 0x01:
         {
             LED_Pattern_2();
+        }
+        break;
+
+        case 0x02:
+        {
+            LED_Pattern_3();
+        }
+        break;
+
+        case 0x03:
+        {
+            Johnson_Counter();
+        }
+        break;
+
+        case 0x04:
+        {
+            LED_Pattern_4();
+        }
+        break;
+
+        case 0x08:
+        {
+            LED_Pattern_5();
         }
         break;
 

@@ -300,13 +300,18 @@ uint8_t Get_PMOD_SWT_Status(void);
  * @param button_status An 8-bit unsigned integer that indicates the status of Button 1 and Button 2.
  *                      The two user LEDs are controlled based on the value of button_status.
  *
- *  button_status      LED 1 Color      RGB LED Color
- *  -------------      -----------      -------------
- *      0x00               Red              Red
- *      0x10               Red              Off
- *      0x02               Off              Green
- *      0x12               Off              Off
+ *  button_status   Input                   LED 1                  RGB LED                PMOD 8LD
+ *  -------------   -----                   -----                  -------                --------
+ *      0x00        Button 1 and 2 pressed  Toggle every 1 second  Green, toggle every   LEDs 0 - 7: OFF
+ *                                                                 1 second
+ *      0x10        Button 1 pressed        On                     Off                    LEDs 0, 2, 4, 6: ON
+ *                                                                                        LEDs 1, 3, 5, 7: OFF
+ *      0x02        Button 2 pressed        Off                    Blue                   LEDs 0, 2, 4, 6: OFF
+ *                                                                                        LEDs 1, 3, 5, 7: ON
+ *      0x12        No buttons pressed      Off                    Off                    LEDs 0 - 7: ON
  *
+ * When both buttons are pressed, LED 1 and the green RGB LED are toggled together and a 1 second
+ * delay is added using Clock_Delay1ms.
  *
  * @return None
  */
@@ -326,6 +331,65 @@ void LED_Pattern_1(uint8_t button_status);
  * @return None
  */
 void LED_Pattern_2(void);
+
+/**
+ * @brief The LED_Pattern_3 function controls the user LEDs and the eight LEDs on the PMOD 8LD module.
+ *
+ * This function turns on LED1, sets the RGB LED to display a blue color, and then outputs an 8-bit
+ * binary down counter pattern on the PMOD 8LD module. The counter starts from 255 (0xFF) and
+ * decrements down to 0 with a delay of 100 ms between each count. The sequence stops if
+ * the switch status changes from only SWT2 being enabled (0x02).
+ *
+ * @param None
+ *
+ * @return None
+ */
+void LED_Pattern_3(void);
+
+/**
+ * @brief The LED_Pattern_4 function generates a ring counter pattern on the PMOD 8LD module.
+ *
+ * This function turns off LED1 and the RGB LED. Then, it generates a ring counter pattern by setting
+ * one bit at a time. The first iteration sets the least significant bit to 1. For each iteration after that,
+ * the 1 is shifted to the left by one bit until it reaches the most significant bit (1, 2, 4, 8, 16, 32, 64, 128).
+ * The delay for each iteration is 200 ms. The sequence stops if the switch status changes from only
+ * SWT3 being enabled (0x04).
+ *
+ * @param None
+ *
+ * @return None
+ */
+void LED_Pattern_4(void);
+
+/**
+ * @brief The LED_Pattern_5 function generates a ring counter pattern on the PMOD 8LD module.
+ *
+ * This function turns off LED1 and the RGB LED. Then, it generates a ring counter pattern by setting
+ * one bit at a time. The first iteration sets the most significant bit to 1. For each iteration after that,
+ * the 1 is shifted to the right by one bit until it reaches the least significant bit (128, 64, 32, 16, 8, 4, 2, 1).
+ * The delay for each iteration is 200 ms. The sequence stops if the switch status changes from only
+ * SWT4 being enabled (0x08).
+ *
+ * @param None
+ *
+ * @return None
+ */
+void LED_Pattern_5(void);
+
+/**
+ * @brief The Johnson_Counter function generates an 8-bit Johnson (twisted ring) counter pattern.
+ *
+ * This function turns on LED1 and sets the RGB LED to display a green color. The pattern on the PMOD 8LD
+ * module starts at all zeroes. Each iteration shifts the pattern left by one bit and inserts the inverted
+ * previous MSB into bit 0. This gives a 16 step sequence (0000_0000, 0000_0001, 0000_0011, ... 1111_1111,
+ * 1111_1110, ... 1000_0000) and then it repeats. The delay for each iteration is 200 ms.
+ * The sequence stops if the switch status changes from only SWT1 and SWT2 being enabled (0x03).
+ *
+ * @param None
+ *
+ * @return None
+ */
+void Johnson_Counter(void);
 
 /**
  * @brief The LED_Controller function selects and executes an appropriate LED pattern based on button and switch statuses.
